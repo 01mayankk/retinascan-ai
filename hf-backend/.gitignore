@@ -1,17 +1,23 @@
-# Python cache
+# Python
 __pycache__/
 *.pyc
-
-# Outputs
-outputs/reports/*
-outputs/heatmaps/*
+*.pyo
 
 # Virtual env
 venv/
+.env
 
-# Notebook cache
-.ipynb_checkpoints/
+# Outputs
+outputs/
+*.pdf
+*.png
 
-# OS files
+# Frontend
+frontend/
+
+# Node
+node_modules/
+
+# OS
 .DS_Store
 Thumbs.db
