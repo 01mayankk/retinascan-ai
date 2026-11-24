@@ -1,6 +1,7 @@
 import os
 import random
 import shutil
+from pathlib import Path
 
 from PIL import Image
 from torchvision import transforms
@@ -8,11 +9,19 @@ from torchvision import transforms
 # =====================================
 # PATHS
 # =====================================
+script_dir = Path(__file__).resolve().parent
 input_base = "../../dataset/classified_images"
-
 output_base = "../../dataset/balanced_dataset"
+input_base_path = (script_dir / input_base).resolve()
+output_base_path = (script_dir / output_base).resolve()
 
 TARGET_COUNT = 300
+
+if not input_base_path.is_dir():
+    raise FileNotFoundError(
+        f"Classified input not found: {input_base_path}. "
+        "Run classify_images.py first with dataset/train.csv and dataset/raw_images/."
+    )
 
 # =====================================
 # AUGMENTATION
@@ -35,17 +44,17 @@ augment = transforms.Compose([
 for i in range(5):
 
     os.makedirs(
-        os.path.join(output_base, str(i)),
+        os.path.join(output_base_path, str(i)),
         exist_ok=True
     )
 
 # =====================================
 # PROCESS EACH CLASS
 # =====================================
-for class_name in os.listdir(input_base):
+for class_name in os.listdir(input_base_path):
 
     class_path = os.path.join(
-        input_base,
+        input_base_path,
         class_name
     )
 
@@ -65,7 +74,7 @@ for class_name in os.listdir(input_base):
     print(f"Original Count: {len(images)}")
 
     output_class_path = os.path.join(
-        output_base,
+        output_base_path,
         class_name
     )
 

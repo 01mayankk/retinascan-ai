@@ -1,9 +1,18 @@
 import os
+from pathlib import Path
 
 # =====================================
 # DATASET PATH
 # =====================================
+script_dir = Path(__file__).resolve().parent
 base_folder = "../../dataset/classified_images"
+base_folder_path = (script_dir / base_folder).resolve()
+
+if not base_folder_path.is_dir():
+    raise FileNotFoundError(
+        f"Classified dataset folder not found: {base_folder_path}. "
+        "This counter reads the intermediate output from classify_images.py."
+    )
 
 print("\n📊 Classified Dataset Count\n")
 
@@ -12,10 +21,10 @@ total = 0
 # =====================================
 # COUNT IMAGES
 # =====================================
-for folder in sorted(os.listdir(base_folder)):
+for folder in sorted(os.listdir(base_folder_path)):
 
     folder_path = os.path.join(
-        base_folder,
+        base_folder_path,
         folder
     )
 
