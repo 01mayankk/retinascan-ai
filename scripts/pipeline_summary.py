@@ -1,5 +1,6 @@
 """Print a read-only, source-backed summary of the RetinaScan AI pipeline."""
 
+import argparse
 import ast
 import json
 import re
@@ -152,8 +153,9 @@ def count_image_folders(directory, suffixes, class_names):
             if item.name.endswith(suffixes)
         )
         total += count
+        class_index = folder.name.split("_", 1)[0]
         try:
-            label = class_names.get(int(folder.name), "unmapped")
+            label = class_names.get(int(class_index), "unmapped")
         except ValueError:
             label = "unmapped"
         print(f"  {folder.name} ({label}): {count}")
@@ -283,7 +285,7 @@ def print_notebook_summary(path, constants):
 
 
 def print_model_inventory(config_values, inference_values):
-    print("\n4. Local model inventory and runtime inference")
+    print("\n5. Local model inventory and runtime inference")
     expected = []
     for values in (config_values, inference_values):
         for key in ("EFFICIENTNET_MODEL_PATH", "DENSENET_MODEL_PATH"):
@@ -357,7 +359,7 @@ IMAGE_EVIDENCE_RE = re.compile(
 )
 
 
-def main():
+def print_technical_summary():
     classify_path = PREPROCESSING / "classify_images.py"
     balance_path = PREPROCESSING / "balance_dataset.py"
     split_path = PREPROCESSING / "split_dataset.py"
@@ -431,24 +433,48 @@ def main():
     )
     count_image_folders(balanced_dir, balanced_suffixes, class_names)
 
-    print("\n3. Split ratios and verified notebook lineage")
+    print("\n3. Scripted split settings and local split counts")
     print(f"  Split input: {split_values['source_dir']}")
     print(
-        "  Ratios: "
+        "  Configured ratios in split_dataset.py: "
         f"train={split_values['train_ratio']:.0%}, "
         f"validation={split_values['val_ratio']:.0%}, "
         f"test={split_values['test_ratio']:.0%} (remainder after integer truncation)"
     )
+    print("  These are the script's configured ratios; local dataset folders may have a different split.")
     split_paths = {
         name: resolve_source_path(split_path, split_values[name])
         for name in ("train_dir", "val_dir", "test_dir")
     }
-    print("  Split implementation: random.shuffle per class; no fixed seed or source-group split.")
+    split_display_names = {
+        "train_dir": "train",
+        "val_dir": "validation",
+        "test_dir": "test",
+    }
+    print("  Scripted split implementation: random.shuffle per class; no fixed seed or source-group split.")
     split_suffixes = image_suffixes(split_path)
+    split_counts = {}
     for name, path in split_paths.items():
-        print(f"  Local {name} counts ({path.relative_to(ROOT)}):")
-        count_image_folders(path, split_suffixes, class_names)
+        display_name = split_display_names[name]
+        print(f"  Local {display_name} counts ({path.relative_to(ROOT)}):")
+        split_counts[display_name] = count_image_folders(
+            path, split_suffixes, class_names
+        )
+    if all(count is not None for count in split_counts.values()):
+        total = sum(split_counts.values())
+        if total:
+            print(
+                "  Observed local split shares: "
+                + ", ".join(
+                    f"{name}={count} ({count / total:.1%})"
+                    for name, count in split_counts.items()
+                )
+            )
+    overview_path = ROOT / "dataset" / "DATASET_OVERVIEW.txt"
+    if overview_path.is_file():
+        print(f"  Local dataset guide: {overview_path.relative_to(ROOT)}")
 
+    print("\n4. Verified notebook lineage")
     quality_cells, quality_skipped = notebook_cells(quality_notebook_path)
     quality_assignments = notebook_assignments(quality_cells, {"dataset_pairs"})
     pair_entries = quality_assignments["dataset_pairs"]
@@ -544,6 +570,128 @@ def main():
         literal_values(inference_path),
     )
     print("\nNo datasets, model weights, or inference settings were modified.")
+
+
+def split_class_counts(directory, class_names, suffixes):
+    counts = {index: 0 for index in class_names}
+    if not directory.is_dir():
+        return None
+
+    for folder in directory.iterdir():
+        if not folder.is_dir():
+            continue
+        try:
+            class_index = int(folder.name.split("_", 1)[0])
+        except ValueError:
+            continue
+        if class_index not in counts:
+            continue
+        counts[class_index] += sum(
+            1 for image in folder.iterdir()
+            if image.is_file() and image.name.endswith(suffixes)
+        )
+    return counts
+
+
+def print_dataset_overview():
+    config_path = ROOT / "app" / "config.py"
+    split_path = PREPROCESSING / "split_dataset.py"
+    config_values = literal_values(config_path)
+    split_values = literal_values(split_path)
+    class_names = config_values["CLASS_NAMES"]
+    split_suffixes = image_suffixes(split_path)
+    split_paths = {
+        "Train": resolve_source_path(split_path, split_values["train_dir"]),
+        "Validation": resolve_source_path(split_path, split_values["val_dir"]),
+        "Test": resolve_source_path(split_path, split_values["test_dir"]),
+    }
+    counts_by_split = {
+        name: split_class_counts(path, class_names, split_suffixes)
+        for name, path in split_paths.items()
+    }
+    dataset_root = ROOT / "dataset"
+    present = all(counts is not None for counts in counts_by_split.values())
+
+    print("=" * 72)
+    print("RETINASCAN AI | LOCAL DATASET OVERVIEW")
+    print("=" * 72)
+    print(f"Dataset folder : {dataset_root}")
+    print(f"Status         : {'READY' if present else 'INCOMPLETE'}")
+
+    if not present:
+        for name, path in split_paths.items():
+            state = "found" if counts_by_split[name] is not None else "not found"
+            print(f"  {name:<12}: {state} ({path})")
+        print("\nPut the labeled images into dataset\\train, dataset\\val, and dataset\\test.")
+        return
+
+    totals = {
+        name: sum(counts.values())
+        for name, counts in counts_by_split.items()
+    }
+    grand_total = sum(totals.values())
+    print(f"Images         : {grand_total:,}")
+    print()
+    print("CLASS DISTRIBUTION")
+    print(f"{'DR grade':<24}{'Train':>10}{'Validation':>14}{'Test':>10}{'Total':>10}")
+    print("-" * 68)
+
+    for index, label in sorted(class_names.items()):
+        train_count = counts_by_split["Train"][index]
+        validation_count = counts_by_split["Validation"][index]
+        test_count = counts_by_split["Test"][index]
+        class_total = train_count + validation_count + test_count
+        print(
+            f"{index} - {label:<20}"
+            f"{train_count:>10,}{validation_count:>14,}"
+            f"{test_count:>10,}{class_total:>10,}"
+        )
+
+    print("-" * 68)
+    print(
+        f"{'Total':<24}{totals['Train']:>10,}{totals['Validation']:>14,}"
+        f"{totals['Test']:>10,}{grand_total:>10,}"
+    )
+    if grand_total:
+        shares = ", ".join(
+            f"{name.lower()} {total:,} ({total / grand_total:.1%})"
+            for name, total in totals.items()
+        )
+        print(f"\nObserved split : {shares}")
+
+    train_ratio = split_values["train_ratio"]
+    validation_ratio = split_values["val_ratio"]
+    test_ratio = split_values["test_ratio"]
+    print(
+        "Script setting : "
+        f"{train_ratio:.0%}/{validation_ratio:.0%}/{test_ratio:.0%} "
+        "(used by split_dataset.py after balancing; not the split shown above)"
+    )
+
+    overview_path = dataset_root / "DATASET_OVERVIEW.txt"
+    if overview_path.is_file():
+        print(f"\nDetails        : {overview_path}")
+    print(f"Browse images  : explorer.exe \"{dataset_root}\"")
+    print("Screen one     : upload an image from dataset\\test\\<class>\\ in the frontend.")
+    print("Git status     : dataset/ is ignored; the image files stay local.")
+    print("\nFor source-level training details, run:")
+    print("  python scripts\\pipeline_summary.py --technical")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Show a concise local dataset overview."
+    )
+    parser.add_argument(
+        "--technical",
+        action="store_true",
+        help="Print source-level preprocessing, training, and inference details.",
+    )
+    args = parser.parse_args()
+    if args.technical:
+        print_technical_summary()
+    else:
+        print_dataset_overview()
 
 
 if __name__ == "__main__":
