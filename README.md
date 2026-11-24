@@ -9,8 +9,8 @@ The system combines:
 - 🧠 Ensemble retinal classification
 - 🔥 GradCAM explainability heatmaps
 - 📄 Automated PDF medical reports
-- ⚡ FastAPI backend deployment
-- 🌐 Modern React/Vercel frontend
+- ⚡ Gradio API hosted on Hugging Face Spaces
+- 🌐 Static frontend for Vercel and GitHub Pages
 - 🤗 HuggingFace AI hosting
 
 ---
@@ -24,10 +24,9 @@ The system combines:
 ✅ Risk Level Prediction  
 ✅ Automated Medical Recommendations  
 ✅ PDF Medical Report Generation  
-✅ FastAPI REST API Backend  
+✅ Gradio Client API
 ✅ HuggingFace Spaces Deployment  
-✅ React + Vercel Frontend Support  
-✅ Dockerized AI Backend  
+✅ Vercel and GitHub Pages Frontend Support
 ✅ Full AI Workflow Integration  
 
 ---
@@ -40,10 +39,10 @@ The system combines:
 | Framework | PyTorch |
 | Classes | 5 |
 | Explainability | GradCAM |
-| Backend | FastAPI |
-| Frontend | React + Vite |
+| Backend | Gradio |
+| Frontend | Vite + JavaScript |
 | Backend Hosting | HuggingFace Spaces |
-| Frontend Hosting | Vercel |
+| Frontend Hosting | Vercel or GitHub Pages |
 
 ---
 
@@ -54,9 +53,9 @@ flowchart TD
 
     A[User Uploads Retinal Image]
 
-    A --> B[Frontend Application - React/Vercel]
+    A --> B[Frontend Application - Vite]
 
-    B --> C[Gardio Backend - HuggingFace]
+    B --> C[Gradio Backend - HuggingFace Spaces]
 
     C --> D[Image Preprocessing]
 
@@ -80,7 +79,7 @@ flowchart TD
 
     K --> L
 
-    L --> M[JSON API Response]
+    L --> M[Report Text + Heatmap + PDF]
 
     M --> N[Frontend Visualization]
 
@@ -94,10 +93,10 @@ flowchart TD
 ```mermaid
 flowchart LR
 
-    A[React Frontend]
-    B[Vercel Hosting]
+    A[Static Vite Frontend]
+    B[Vercel or GitHub Pages]
 
-    C[FastAPI Backend]
+    C[Gradio API]
     D[HuggingFace Spaces]
 
     E[EfficientNetB2 Model]
@@ -133,7 +132,7 @@ sequenceDiagram
 
     User->>Frontend: Upload Retina Image
 
-    Frontend->>Backend: POST /analyze
+    Frontend->>Backend: Gradio Client API /run_analysis
 
     Backend->>AI_Model: Run Inference
 
@@ -147,7 +146,7 @@ sequenceDiagram
 
     PDF-->>Backend: PDF File
 
-    Backend-->>Frontend: JSON Response
+    Backend-->>Frontend: Report + Heatmap + PDF
 
     Frontend-->>User: Display Results
 ```
@@ -169,15 +168,9 @@ retaniascan-ai/
 │
 ├── dataset/
 │
-├── hf-backend/
-│   ├── app/
-│   ├── models/
-│   ├── Dockerfile
-│   ├── main.py
-│   └── requirements.txt
-│
 ├── models/
-│   └── efficientnet/
+│   ├── efficientnet/
+│   └── densenet121/
 │
 ├── notebooks/
 │
@@ -229,202 +222,98 @@ The system automatically generates downloadable PDF reports containing:
 
 ---
 
-# ⚙️ Backend Setup Instructions
+# ⚙️ Local Gradio Setup
 
-## 1️⃣ Clone Repository
+## 1. Create and activate a virtual environment (Windows)
 
-```bash
-git clone YOUR_REPOSITORY_URL
+```powershell
+py -3.10 -m venv .venv
+.\.venv\Scripts\Activate.ps1
 ```
 
----
-
-## 2️⃣ Create Virtual Environment
-
-### Windows
-
-```bash
-python -m venv venv
-```
-
-Activate:
-
-```bash
-venv\Scripts\activate
-```
-
----
-
-### Linux / Mac
-
-```bash
-python3 -m venv venv
-```
-
-Activate:
-
-```bash
-source venv/bin/activate
-```
-
----
-
-## 3️⃣ Install Dependencies
+## 2. Install dependencies and model weights
 
 ```bash
 pip install -r requirements.txt
 ```
 
----
+The model files are not tracked in Git. From the repository root, download the
+same weights used by the Hugging Face Space:
 
-# 🚀 Run FastAPI Backend Locally
-
-Navigate to:
-
-```bash
-cd hf-backend
+```powershell
+New-Item -ItemType Directory -Force models\efficientnet, models\densenet121 | Out-Null
+Invoke-WebRequest https://huggingface.co/spaces/01mayankk/RetinaScanAI/resolve/main/models/efficientnet/best_efficientnet_b2.pth -OutFile models\efficientnet\best_efficientnet_b2.pth
+Invoke-WebRequest https://huggingface.co/spaces/01mayankk/RetinaScanAI/resolve/main/models/densenet121/best_densenet121_phase2.pth -OutFile models\densenet121\best_densenet121_phase2.pth
 ```
 
-Run:
+Run the app from the repository root:
 
 ```bash
-uvicorn main:app --reload
+python app.py
 ```
 
----
+Open `http://127.0.0.1:7860`. The Gradio endpoint is `/predict`; API details are
+available at `http://127.0.0.1:7860/gradio_api/info`.
 
-# 📘 Open API Documentation
+# 🌐 Frontend Setup and Deployment
 
-```text
-http://127.0.0.1:8000/docs
-```
+The frontend uses the official `@gradio/client` SDK and connects directly to the
+public `01mayankk/RetinaScanAI` Space at `/run_analysis`. No Hugging Face token
+or client-side secret is required. The `VITE_*` settings are public build-time
+configuration, not secret storage. To use the local app instead, set
+`VITE_GRADIO_SPACE=http://127.0.0.1:7860` and
+`VITE_GRADIO_API_NAME=/predict` in `frontend/.env.local`.
 
----
+Run locally:
 
-# 🐳 Docker Deployment
-
-## Build Docker Image
-
-```bash
-docker build -t retaniascan-backend .
-```
-
----
-
-## Run Docker Container
-
-```bash
-docker run -p 7860:7860 retaniascan-backend
-```
-
----
-
-# 🤗 HuggingFace Backend Deployment
-
-## Create Space
-
-Select:
-- SDK → Docker
-
----
-
-## Push Backend
-
-```bash
-git init
-git add .
-git commit -m "Initial deployment"
-git branch -M main
-git remote add origin YOUR_HF_SPACE_URL
-git push -u origin main
-```
-
----
-
-# 🌐 Frontend Setup Instructions
-
-## Create Frontend
-
-```bash
-npm create vite@latest
-```
-
-Select:
-- React
-- JavaScript
-
----
-
-## Install Frontend Dependencies
-
-```bash
+```powershell
+cd frontend
 npm install
-```
-
----
-
-## Run Frontend
-
-```bash
+Copy-Item .env.example .env.local
 npm run dev
 ```
 
----
+Create a production build with `npm run build`; the output is `frontend/dist`.
+`VITE_BASE_PATH` configures the Vite base path and defaults to `./`, which works
+for Vercel and repository-path GitHub Pages deployments.
 
-# 🔌 Backend API Integration
+## Deploy to Vercel
 
-Example frontend API call:
-
-```javascript
-const formData = new FormData();
-
-formData.append("file", imageFile);
-
-const response = await fetch(
-  "https://YOUR_HF_BACKEND/analyze",
-  {
-    method: "POST",
-    body: formData,
-  }
-);
-
-const data = await response.json();
-```
-
----
-
-# ☁️ Frontend Deployment (Vercel)
-
-## Install Vercel CLI
+Import the repository into Vercel with the repository root as the project root.
+The root `vercel.json` installs the frontend dependencies, runs the Vite build,
+and publishes `frontend/dist`. Deploy from the repository root:
 
 ```bash
-npm install -g vercel
+npx vercel --prod
 ```
 
----
+The Space and `/run_analysis` endpoint are defaults in the frontend. If you
+override them in Vercel, configure `VITE_GRADIO_SPACE` and
+`VITE_GRADIO_API_NAME` as public build variables. Do not add `HF_TOKEN` or
+other secrets to frontend environment variables or source files.
 
-## Deploy
+For GitHub Pages, set the repository's Pages source to **GitHub Actions**. The
+included workflow builds and deploys `frontend/dist` on pushes to `main`:
 
 ```bash
-vercel
+git add frontend .github/workflows/frontend-pages.yml README.md .gitignore app.py requirements.txt
+git commit -m "Add RetinaScanAI frontend"
+git push origin main
 ```
+
+The frontend renders the Gradio outputs as returned: report text (including
+prediction, top-two confidence values, risk, confidence status, recommendation,
+and disclaimer), Grad-CAM image, and PDF file. The API does not return a
+per-class probability vector.
 
 ---
 
-# 📊 Example API Response
+# 📊 Gradio API Contract
 
-```json
-{
-  "prediction": "No DR",
-  "confidence": "99.59%",
-  "second_prediction": "Mild DR (0.18%)",
-  "risk_level": "Low Risk",
-  "confidence_status": "Prediction Confidence Acceptable",
-  "recommendation": "Routine eye checkup recommended.",
-  "heatmap_base64": "...",
-  "pdf_report_path": "..."
-}
-```
+`/run_analysis` on the currently deployed Space accepts one image input named
+`image` and returns three outputs in order: report text, a Grad-CAM image file,
+and a PDF report file. The local app exposes the same input/output contract at
+`/predict`.
 
 ---
 
