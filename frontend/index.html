@@ -25,6 +25,7 @@
         <span class="model-badge">ICDR 5-Stage DR Grading <span aria-hidden="true">·</span> Grad-CAM XAI</span>
         <nav class="header-actions" aria-label="Clinical information">
           <button class="text-button" type="button" data-dialog="grading-guide">Grading Scale Guide</button>
+          <button class="text-button" type="button" data-dialog="methodology-guide">Dataset &amp; Training Methodology</button>
           <button class="text-button" type="button" data-dialog="clinical-disclaimer">Clinical Disclaimer</button>
         </nav>
       </header>
@@ -238,6 +239,63 @@
       </div>
       <p class="dialog-intro">RetinaScan AI provides automated analysis for research and triage support only. It is not intended to diagnose, treat, or rule out diabetic retinopathy.</p>
       <p class="dialog-intro">Image quality, model limitations, and other clinical factors can affect the output. A licensed ophthalmologist must review and confirm any screening result. Do not use this tool as a substitute for professional medical advice or an eye examination.</p>
+    </dialog>
+
+    <dialog id="methodology-guide" class="info-dialog methodology-dialog" aria-labelledby="methodology-title">
+      <div class="dialog-heading">
+        <div><p class="card-label">PIPELINE TRANSPARENCY</p><h2 id="methodology-title">Dataset &amp; Training Methodology</h2></div>
+        <button class="dialog-close" type="button" aria-label="Close dialog">×</button>
+      </div>
+      <p class="dialog-intro">
+        This summary reflects the checked-in preprocessing scripts, training notebooks, and inference code. It distinguishes implemented steps from experiments whose dataset lineage is not established in the repository.
+      </p>
+
+      <div class="methodology-grid">
+        <section class="methodology-section">
+          <h3>Labeling and class balance</h3>
+          <ul>
+            <li><strong>Labels:</strong> <code>classify_images.py</code> reads <code>train.csv</code>, matches <code>id_code</code> to a PNG in <code>raw_images</code>, and copies it into the directory named by <code>diagnosis</code> (0–4).</li>
+            <li><strong>Class names:</strong> 0 No DR, 1 Mild DR, 2 Moderate DR, 3 Severe DR, and 4 Proliferative DR.</li>
+            <li><strong>Balancing:</strong> <code>balance_dataset.py</code> targets 300 files per class. It randomly samples down larger classes; smaller classes keep their originals and are filled using horizontal flips, rotations up to 20°, and brightness/contrast jitter of 0.2.</li>
+            <li><strong>Limitations:</strong> Original per-class counts are unavailable because the dataset is not included. Random sampling has no fixed seed, the active notebook training setup does not use class weights, and the balancing script does not clear an existing output folder before copying.</li>
+          </ul>
+        </section>
+
+        <section class="methodology-section">
+          <h3>Split and dataset provenance</h3>
+          <ul>
+            <li><strong>Scripted split:</strong> <code>split_dataset.py</code> shuffles each numeric class independently and copies 70% to train, 15% to validation, and the remainder to test.</li>
+            <li><strong>Illustrative counts:</strong> If all five classes contain exactly 300 files, this split yields 210 / 45 / 45 per class (1,050 / 225 / 225 total).</li>
+            <li><strong>Leakage risk:</strong> Balancing/augmentation runs before splitting, and the split is by file rather than source-image group. Related augmented copies could therefore cross splits; no group-level leakage prevention is implemented.</li>
+            <li><strong>Unverified link:</strong> Training notebooks load <code>enhanced_train</code>, <code>enhanced_val</code>, and <code>enhanced_test</code>. The repository does not establish that these are produced from the script-generated <code>train</code>, <code>val</code>, and <code>test</code> folders.</li>
+          </ul>
+        </section>
+
+        <section class="methodology-section">
+          <h3>Training and safeguards</h3>
+          <ul>
+            <li><strong>EfficientNet-B2:</strong> Notebook 05 uses pretrained default weights, fine-tunes the final two feature blocks, and adds dropout (0.4). The active setup uses cross-entropy, AdamW, ReduceLROnPlateau, a 100-epoch maximum, and early stopping after 15 epochs without validation-loss improvement.</li>
+            <li><strong>DenseNet121:</strong> Notebook 07 trains in three phases: classifier only, then Transition3 and DenseBlock4, then the full network. The deployed inference config loads the phase-2 checkpoint. The final notebook phase adds label smoothing and weight decay, but that phase-3 checkpoint is not the one loaded by the app.</li>
+            <li><strong>Augmentation:</strong> Training notebooks apply random image transforms to training batches. Validation and test transforms resize and normalize without those random augmentations.</li>
+          </ul>
+        </section>
+
+        <section class="methodology-section">
+          <h3>Inference and explainability</h3>
+          <ul>
+            <li><strong>Live input transform:</strong> Convert to RGB, resize to 300 × 300, convert to tensor, and apply ImageNet mean/std normalization. The inference code does not apply CLAHE, cropping, or sharpening.</li>
+            <li><strong>Ensemble:</strong> Softmax probabilities are combined with DenseNet121 weight 0.6 and EfficientNet-B2 weight 0.4.</li>
+            <li><strong>Grad-CAM:</strong> The heatmap uses the final DenseNet121 feature layer. Highlighted regions are model attribution, not confirmed lesions.</li>
+            <li><strong>Image-quality experiments:</strong> Notebook 04 explores LAB CLAHE and conditional sharpening, but no checked-in call connects that experiment to the training data path or live inference.</li>
+          </ul>
+        </section>
+      </div>
+
+      <aside class="methodology-caveat">
+        <strong>Evaluation context</strong>
+        <p>Stored notebook outputs report 68.89% EfficientNet-B2 test accuracy with TTA, 68.00% DenseNet121 test accuracy, and 70.22% ensemble test accuracy on the notebooks’ <code>enhanced_test</code> path. These are historical notebook outputs, not independently reproduced or a guarantee of current clinical performance. The source does not establish the training-data lineage for the deployed checkpoints.</p>
+      </aside>
+      <p class="dialog-footnote">For education and triage-support research only. Screening outputs require review and confirmation by a licensed ophthalmologist.</p>
     </dialog>
 
     <script type="module" src="/src/main.js"></script>
