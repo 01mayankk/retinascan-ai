@@ -217,7 +217,9 @@ generate a detailed report.
             output_heatmap,
 
             output_pdf
-        ]
+        ],
+
+        api_name="predict"
     )
 
     # ========================================================
@@ -252,9 +254,11 @@ for clinical evaluation and treatment.
 
 if __name__ == "__main__":
 
-    demo.launch(
+    demo.queue().launch(
 
-        share=True
+        server_name="0.0.0.0",
+
+        server_port=7860
     )
 
 # ============================================================
