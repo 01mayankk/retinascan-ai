@@ -65,7 +65,13 @@ From the repository root, run:
 python scripts/pipeline_summary.py
 ```
 
-The standard-library-only script reads preprocessing source, relevant notebook code cells, `app/config.py`, `app/inference.py`, local dataset directory entries, and model-file metadata. It reports class mappings, source counts using the counters' image suffix rules, balancing and split settings, the notebook 04 split-to-enhanced mapping, training safeguards, runtime preprocessing, and checkpoint presence/size. It does not import or execute the preprocessing/training pipelines, open model weights, or write datasets, model files, or inference settings. Missing local data folders are reported as unavailable rather than treated as zero-count datasets.
+The default view is a concise class-by-split table with local totals and observed split percentages. For the full source-level pipeline audit, run:
+
+```powershell
+python scripts/pipeline_summary.py --technical
+```
+
+The standard-library-only technical view reads preprocessing source, relevant notebook code cells, `app/config.py`, `app/inference.py`, local dataset directory entries, and model-file metadata. It reports class mappings, balancing and split settings, the notebook 04 split-to-enhanced mapping, training safeguards, runtime preprocessing, and checkpoint presence/size. Neither mode imports or executes preprocessing/training pipelines, opens model weights, or writes datasets, model files, or inference settings.
 
 ## Training notes and evaluation evidence
 
@@ -109,7 +115,7 @@ The API accepts one image and returns three values in order:
 | File | Responsibility and connections |
 |---|---|
 | `app.py` | Gradio page, input validation, `/predict` API registration, queue, and local server launch. Calls `app.main.analyze_retina`. |
-| `scripts/pipeline_summary.py` | Read-only CLI that parses source and notebook settings, verifies the split-to-enhanced path mapping, counts local data folders, and reports model-file metadata. |
+| `scripts/pipeline_summary.py` | Read-only dataset summary by default; `--technical` adds source/notebook audit, split-to-enhanced mapping, and model metadata. |
 | `app/config.py` | Class labels, recommendation strings, risk levels, 300-pixel input size, 65% confidence threshold, model paths, and ensemble weights. |
 | `app/inference.py` | Loads EfficientNet-B2 and DenseNet121 checkpoints, preprocesses input, performs weighted soft-voting inference, and returns the top two results. |
 | `app/gradcam.py` | Uses the DenseNet121 final feature layer and shared inference preprocessing to create an overlay image. |

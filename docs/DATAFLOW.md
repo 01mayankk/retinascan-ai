@@ -29,7 +29,7 @@ Notebook 04 maps each script-generated split to its matching `enhanced_*` direct
 
 Because augmentation is performed before the per-file split and there is no grouping by original source file, related variants could be distributed across training and evaluation. No fixed random seed or explicit source-group leakage prevention is present. If every class has exactly 300 files, the intended totals are 1,050 train, 225 validation, and 225 test.
 
-Run `python scripts/pipeline_summary.py` from the repository root to inspect these source mappings, local counts when data folders exist, notebook safeguards, and model artifact metadata. The CLI is read-only. Notebook 04's CLAHE and conditional sharpening are offline preprocessing and are not called during live inference.
+Run `python scripts/pipeline_summary.py` from the repository root for a concise local split/class count table. Add `--technical` to inspect source mappings, notebook safeguards, and model artifact metadata. Both CLI modes are read-only. Notebook 04's CLAHE and conditional sharpening are offline preprocessing and are not called during live inference.
 
 ## Real-time screening
 

@@ -183,7 +183,7 @@ The optional GitHub Pages workflow is [`frontend-pages.yml`](./.github/workflows
 - `balance_dataset.py` targets 300 files per class by random undersampling or image augmentation. `split_dataset.py` then performs per-class random 70/15/15 file splitting.
 - Augmentation happens before that split, without a source-image grouping step; related copies could cross split boundaries.
 - Notebook 04 applies CLAHE and conditional sharpening to the script-generated `train/val/test` splits and writes `enhanced_train/enhanced_val/enhanced_test`; notebooks 05 and 07 consume those paths.
-- Run `python scripts/pipeline_summary.py` from the repository root for source-derived training settings, verified path mappings, local image counts when datasets are present, and model-file metadata. See [`README_BACKEND.md`](./README_BACKEND.md) for details.
+- Run `python scripts/pipeline_summary.py` for a concise local split/class table; use `python scripts/pipeline_summary.py --technical` for source-derived training settings, verified path mappings, and model-file metadata. See [`README_BACKEND.md`](./README_BACKEND.md) for details.
 - Stored notebook output reports 68.89% EfficientNet-B2 accuracy with test-time augmentation, 68.00% DenseNet121 accuracy, and 70.22% ensemble accuracy. These are historical notebook outputs, not independently reproduced results or clinical performance guarantees.
 
 ## Further reading

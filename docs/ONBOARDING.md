@@ -87,7 +87,13 @@ From the repository root, run:
 python scripts/pipeline_summary.py
 ```
 
-This standard-library CLI reads preprocessing scripts, relevant notebook cells, runtime configuration, local dataset folders, and model file metadata. It reports the CSV-to-class mapping, balancing/augmentation and split settings, the verified split-to-enhanced notebook path, training safeguards, inference preprocessing, and which expected checkpoints exist. It does not modify datasets, model weights, or inference behavior. If data folders are absent, it reports their counts as unavailable.
+The default output is a concise table of image counts by DR class and split. For source-derived preprocessing/training details, verified notebook lineage, inference settings, and checkpoint status, run:
+
+```powershell
+python scripts/pipeline_summary.py --technical
+```
+
+Both modes are read-only and do not modify datasets, model weights, or inference behavior.
 
 ## Testing with local sample images
 

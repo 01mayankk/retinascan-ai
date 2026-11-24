@@ -35,7 +35,7 @@ flowchart TD
 | `.gitignore` | Excludes datasets, test samples, environment files, model/output files, and build artifacts. | Git. |
 | `README.md` | Project overview, quickstart, architecture, provenance caveats, deployment pointers. | Links backend, frontend, docs. |
 | `README_BACKEND.md` | Detailed preprocessing, training, inference, API, and notebook map. | `scripts/`, `notebooks/`, `app/`. |
-| `scripts/pipeline_summary.py` | Read-only CLI audit of source mappings, notebook settings, local dataset counts, and model metadata. | Run from repository root with `python scripts/pipeline_summary.py`. |
+| `scripts/pipeline_summary.py` | Read-only dataset table by default; `--technical` adds source mappings, notebook settings, and model metadata. | Run from repository root. |
 | `app.py` | Gradio app, `/predict`, and local launch. | `app.main`, `app.config`. |
 | `check_gpu.py` | Local CUDA availability probe. | PyTorch. |
 | `requirements.txt` | Python dependency list for backend and notebooks. | Local environment / hosted backend. |
@@ -102,7 +102,7 @@ Training logic instead appears in the notebooks, and production inference is in 
 | `notebooks/09_ensemble_inference.ipynb` | Weighted soft-voting evaluation on `enhanced_test`. |
 | `notebooks/retinascan_experimentation.ipynb` | Zero-byte file; no notebook content. |
 
-Notebook 04 establishes the source mapping from split outputs to `enhanced_*`, which notebooks 05 and 07 consume. Run `python scripts/pipeline_summary.py` at the repository root to inspect these source references and local data/model artifact availability without modifying them.
+Notebook 04 establishes the source mapping from split outputs to `enhanced_*`, which notebooks 05 and 07 consume. Run `python scripts/pipeline_summary.py --technical` at the repository root to inspect these source references and local data/model artifact availability without modifying them.
 
 ## Frontend files
 
