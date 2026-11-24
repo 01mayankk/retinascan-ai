@@ -21,24 +21,25 @@ flowchart TD
     D --> E[balanced_dataset]
     E --> F[split_dataset.py]
     F --> G[dataset train val test]
-    E -. "training dataset lineage not verified" .-> H[notebooks 05 and 07 use enhanced_train enhanced_val enhanced_test]
-    H --> I[EfficientNet-B2 and DenseNet121 training notebooks]
-    I --> J[EfficientNet-B2 checkpoint]
-    I --> K[DenseNet121 phase-2 checkpoint]
-    J --> L[app.inference weighted soft-voting ensemble]
-    K --> L
-    L --> M[app.main analysis orchestration]
-    M --> N[Grad-CAM heatmap and PDF report]
-    O[User] --> P[Vercel static Vite frontend]
-    P --> Q["@gradio/client"]
-    Q --> R[Hugging Face Gradio Space]
-    R --> L
-    N --> R
-    R --> P
-    P --> S[Structured result, image attribution, PDF download]
+    G --> H[notebook 04 applies image enhancement]
+    H --> I[enhanced_train enhanced_val enhanced_test]
+    I --> J[notebooks 05 and 07 training]
+    J --> K[EfficientNet-B2 checkpoint]
+    J --> L[DenseNet121 phase-2 checkpoint]
+    K --> M[app.inference weighted soft-voting ensemble]
+    L --> M
+    M --> N[app.main analysis orchestration]
+    N --> O[Grad-CAM heatmap and PDF report]
+    P[User] --> Q[Vercel static Vite frontend]
+    Q --> R["@gradio/client"]
+    R --> S[Hugging Face Gradio Space]
+    S --> M
+    O --> S
+    S --> Q
+    Q --> T[Structured result, image attribution, PDF download]
 ```
 
-The dotted edge is intentional: the checked-in preprocessing script produces `dataset/train`, `dataset/val`, and `dataset/test`, while the training notebooks load `dataset/enhanced_train`, `dataset/enhanced_val`, and `dataset/enhanced_test`. The repository does not contain a verified step connecting those paths.
+The source connection is present: notebook 04 maps each script-generated split (`train`, `val`, `test`) to its corresponding `enhanced_*` directory, applies `enhance_retina_image`, and saves the result. Notebooks 05 and 07 load those enhanced outputs. `scripts/pipeline_summary.py` inspects this mapping and local file counts without modifying data or model artifacts.
 
 ## Five DR grades
 
@@ -90,6 +91,7 @@ The live inference transform converts the image to RGB, resizes it to 300 × 300
 │   ├── 09_ensemble_inference.ipynb
 │   └── retinascan_experimentation.ipynb  # Empty file
 ├── scripts/
+│   ├── pipeline_summary.py              # Read-only source/data/model audit CLI
 │   ├── preprocessing/
 │   │   ├── classify_images.py
 │   │   ├── balance_dataset.py
@@ -180,7 +182,8 @@ The optional GitHub Pages workflow is [`frontend-pages.yml`](./.github/workflows
 - `scripts/preprocessing/classify_images.py` copies CSV-labeled PNG files into numeric class folders.
 - `balance_dataset.py` targets 300 files per class by random undersampling or image augmentation. `split_dataset.py` then performs per-class random 70/15/15 file splitting.
 - Augmentation happens before that split, without a source-image grouping step; related copies could cross split boundaries.
-- The notebooks use `enhanced_*` data directories, and this repository does not prove how those directories were derived from the scripted split. See the [Dataset & Training Methodology view](./frontend/index.html) in the frontend and [`README_BACKEND.md`](./README_BACKEND.md) for the full evidence and caveats.
+- Notebook 04 applies CLAHE and conditional sharpening to the script-generated `train/val/test` splits and writes `enhanced_train/enhanced_val/enhanced_test`; notebooks 05 and 07 consume those paths.
+- Run `python scripts/pipeline_summary.py` from the repository root for source-derived training settings, verified path mappings, local image counts when datasets are present, and model-file metadata. See [`README_BACKEND.md`](./README_BACKEND.md) for details.
 - Stored notebook output reports 68.89% EfficientNet-B2 accuracy with test-time augmentation, 68.00% DenseNet121 accuracy, and 70.22% ensemble accuracy. These are historical notebook outputs, not independently reproduced results or clinical performance guarantees.
 
 ## Further reading

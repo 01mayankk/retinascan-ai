@@ -24,7 +24,7 @@ flowchart LR
     CSS -. "styles and transitions" .-> I
 ```
 
-`index.html` owns the semantic document structure, upload and result panels, two explainability tabs, raw-report disclosure, and grading/disclaimer/methodology dialogs. `src/main.js` owns file state, Gradio connection and queue status, report parsing, and rendering. `src/style.css` owns the mint clinical theme, responsive layout, focus treatment, and reduced-motion-aware transitions.
+`index.html` owns the semantic document structure, upload and result panels, two explainability tabs, raw-report disclosure, and grading/disclaimer dialogs. The user-facing screening interface does not include dataset or training methodology content; inspect the pipeline from the repository root with `python scripts/pipeline_summary.py`. `src/main.js` owns file state, Gradio connection and queue status, report parsing, and rendering. `src/style.css` owns the mint clinical theme, responsive layout, focus treatment, and reduced-motion-aware transitions.
 
 ## Client-to-Hugging Face request sequence
 

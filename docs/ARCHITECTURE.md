@@ -7,7 +7,7 @@ RetinaScan AI has two separate execution paths:
 1. **Offline experimentation:** Python scripts copy, balance, and split a labeled dataset; Jupyter notebooks load datasets, train/evaluate models, and save checkpoints.
 2. **Online screening demonstration:** A static Vite frontend sends one image to a Gradio Space. The backend preprocesses it, runs two classifiers, creates a DenseNet121 Grad-CAM overlay and PDF, and returns three outputs.
 
-The checked-in code does not establish that the `train/val/test` folders created by preprocessing scripts are the same dataset lineage as the `enhanced_train/enhanced_val/enhanced_test` paths used by training notebooks.
+Notebook 04 maps the `train/val/test` folders created by preprocessing scripts to `enhanced_train/enhanced_val/enhanced_test` and writes enhanced images; notebooks 05 and 07 load those paths. The read-only `scripts/pipeline_summary.py` reports this source connection and the availability of local data/model artifacts.
 
 ## Component architecture
 
@@ -20,7 +20,10 @@ flowchart TD
         BALANCE --> BALANCED[balanced_dataset]
         BALANCED --> SPLIT[scripts preprocessing split_dataset.py]
         SPLIT --> SPLITS[train val test]
-        ENHANCED[enhanced_train enhanced_val enhanced_test] -. "lineage not shown" .-> NB[notebooks 05 and 07]
+        SPLITS --> ENHANCE[notebook 04 enhancement]
+        ENHANCE --> ENHANCED[enhanced_train enhanced_val enhanced_test]
+        ENHANCED --> NB[notebooks 05 and 07]
+        AUDIT[scripts pipeline_summary.py] -. "read-only inspection" .-> SPLIT
         NB --> WEIGHTS[EfficientNet-B2 and DenseNet121 checkpoints]
     end
     subgraph Serving["Serving and browser"]
@@ -54,7 +57,7 @@ The frontend defaults to the public Space endpoint `/run_analysis`; local use sh
 
 ## Data and training boundaries
 
-The preprocessing scripts use `dataset/train.csv` and `dataset/raw_images`, then produce `classified_images`, `balanced_dataset`, and `train/val/test`. `notebooks/05_efficientnet_training.ipynb` and `notebooks/07_densenet121_training.ipynb` load `enhanced_*` paths. No checked-in generator or manifest connects those directory sets.
+The preprocessing scripts use `dataset/train.csv` and `dataset/raw_images`, then produce `classified_images`, `balanced_dataset`, and `train/val/test`. Notebook 04 applies enhancement and writes the corresponding `enhanced_*` paths consumed by notebooks 05 and 07. The dataset itself is not included, so the current local outputs/counts are unavailable.
 
 Several tracked files under `scripts/training/` and `scripts/utils/` are empty placeholders. Executable training code is in notebooks, while executable serving code is in `app/`.
 

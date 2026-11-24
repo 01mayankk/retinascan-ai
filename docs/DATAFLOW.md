@@ -14,17 +14,22 @@ flowchart LR
     SPLIT --> TR[train 70 percent]
     SPLIT --> VA[val 15 percent]
     SPLIT --> TE[test remainder]
-    ENH[enhanced_train enhanced_val enhanced_test] -. "source generation not checked in" .-> TRAIN[Training notebooks 05 and 07]
+    TR --> ENHANCE[notebook 04 CLAHE and conditional sharpening]
+    VA --> ENHANCE
+    TE --> ENHANCE
+    ENHANCE --> ENH[enhanced_train enhanced_val enhanced_test]
+    ENH --> TRAIN[Training notebooks 05 and 07]
     TRAIN --> CKPT[Model checkpoints]
     CKPT --> SERVE[app.inference]
-    SPLIT -. "not connected by checked-in code" .-> ENH
 ```
 
 `classify_images.py` copies `<id_code>.png` to the numeric directory matching `diagnosis`. `balance_dataset.py` randomly samples larger classes down to 300 or creates augmented copies for smaller classes. `split_dataset.py` shuffles each balanced class independently and copies integer-truncated 70% / 15% / remainder slices.
 
-Because augmentation is performed before the per-file split and there is no grouping by original source file, related variants could be distributed across training and evaluation. No fixed random seed or explicit source-group leakage prevention is present. If every class has exactly 300 files, the intended totals are 1,050 train, 225 validation, and 225 test. Training notebooks report those sizes but consume `enhanced_*` directories; equivalence to the scripted output is unverified.
+Notebook 04 maps each script-generated split to its matching `enhanced_*` directory, applies `enhance_retina_image`, and saves the processed images. Notebooks 05 and 07 load those enhanced outputs. This verifies source wiring, not the contents of a current local dataset: the dataset is not included in the repository.
 
-Notebook 04 demonstrates CLAHE and conditional sharpening. The live inference implementation does not call those operations.
+Because augmentation is performed before the per-file split and there is no grouping by original source file, related variants could be distributed across training and evaluation. No fixed random seed or explicit source-group leakage prevention is present. If every class has exactly 300 files, the intended totals are 1,050 train, 225 validation, and 225 test.
+
+Run `python scripts/pipeline_summary.py` from the repository root to inspect these source mappings, local counts when data folders exist, notebook safeguards, and model artifact metadata. The CLI is read-only. Notebook 04's CLAHE and conditional sharpening are offline preprocessing and are not called during live inference.
 
 ## Real-time screening
 

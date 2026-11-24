@@ -5,7 +5,7 @@
 1. **The browser is a static client.** Vite builds the upload and results UI; it uses `@gradio/client` to connect to the public Hugging Face Space. No HF token is required in browser code.
 2. **The Space performs analysis.** Gradio accepts one image, calls the analysis pipeline, and returns a report string, a Grad-CAM overlay file, and a PDF file.
 3. **Two classifiers contribute to the runtime result.** EfficientNet-B2 and DenseNet121 probabilities are combined with weights 0.4 and 0.6, respectively. Grad-CAM is generated from DenseNet121.
-4. **Training is separate from serving.** Preprocessing scripts, training notebooks, and the Python Gradio app are different parts of the repository. The notebooks load `enhanced_*` directories; no checked-in source proves how those relate to script-generated `train/val/test`.
+4. **Training is separate from serving.** Preprocessing scripts, training notebooks, and the Python Gradio app are different parts of the repository. Notebook 04 converts script-generated `train/val/test` splits into `enhanced_*` directories consumed by notebooks 05 and 07. Use the read-only CLI audit to inspect this path and local artifact availability.
 5. **This is not a clinical diagnosis.** Use only for education and research triage support. A licensed ophthalmologist must confirm any screening result.
 
 ```mermaid
@@ -17,8 +17,10 @@ flowchart LR
     OUT --> WEB
     WEB --> USER
     DATA[Local labeled dataset] --> SCRIPTS[Preprocessing scripts]
-    SCRIPTS --> TRAIN[Training notebooks]
-    TRAIN -. "enhanced dataset lineage not verified" .-> ENSEMBLE
+    SCRIPTS --> SPLIT[train val test]
+    SPLIT --> ENHANCE[notebook 04 image enhancement]
+    ENHANCE --> TRAIN[notebooks 05 and 07]
+    TRAIN --> ENSEMBLE
 ```
 
 ## Glossary
@@ -76,6 +78,16 @@ VITE_BASE_PATH=./
 ```
 
 Then run `npm run dev`. Build production assets with `npm run build`; Vercel uses the repository-root `vercel.json`.
+
+## Inspecting the ML pipeline
+
+From the repository root, run:
+
+```powershell
+python scripts/pipeline_summary.py
+```
+
+This standard-library CLI reads preprocessing scripts, relevant notebook cells, runtime configuration, local dataset folders, and model file metadata. It reports the CSV-to-class mapping, balancing/augmentation and split settings, the verified split-to-enhanced notebook path, training safeguards, inference preprocessing, and which expected checkpoints exist. It does not modify datasets, model weights, or inference behavior. If data folders are absent, it reports their counts as unavailable.
 
 ## Testing with local sample images
 

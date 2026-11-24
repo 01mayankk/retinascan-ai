@@ -41,9 +41,9 @@ These records describe choices observable in checked-in code. The repository doe
 - **Original hosting rationale:** Not recorded in the source.
 - **Implication:** Frontend and backend are deployed independently. The frontend endpoint setting must match the Gradio API name exposed by its target Space (`/run_analysis` in the checked-in frontend example; `/predict` for the local app).
 
-## ADR-006: Keep methodology and clinical limitations visible to users
+## ADR-006: Separate clinical guidance from technical pipeline inspection
 
-- **Status:** Implemented in the frontend.
-- **Evidence:** `frontend/index.html` contains a grading guide, clinical disclaimer, and methodology dialog. The methodology view distinguishes the script-produced `train/val/test` paths from the notebook-used `enhanced_*` paths.
-- **Rationale:** Users need to understand that outputs are research/triage support and that the checked-in data lineage does not establish a fully reproducible clinical validation pipeline.
-- **Implication:** Historical notebook accuracies are labeled as stored outputs rather than product guarantees.
+- **Status:** Implemented.
+- **Evidence:** `frontend/index.html` retains the grading guide and clinical disclaimer, while pipeline details are inspected with `python scripts/pipeline_summary.py`.
+- **Rationale:** Keep the public screening workflow focused on clinical end users while making code-derived methodology available to developers and reviewers.
+- **Implication:** The CLI is read-only and reports source wiring separately from local data availability; historical notebook accuracies remain stored outputs rather than product guarantees.

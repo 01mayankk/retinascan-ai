@@ -8,7 +8,11 @@ This map reflects the checked-in repository. Empty placeholders and ignored loca
 flowchart TD
     CSV[dataset train.csv and raw_images] --> PRE[scripts preprocessing]
     PRE --> SPLITS[dataset train val test]
-    ENH[dataset enhanced_* lineage unverified] --> NB[notebooks 05 07 08 09]
+    SPLITS --> NB04[notebook 04 enhancement]
+    NB04 --> ENH[dataset enhanced_*]
+    ENH --> NB[notebooks 05 07 08 09]
+    AUDIT[scripts/pipeline_summary.py] -. "read-only source and local artifact inspection" .-> PRE
+    AUDIT -.-> NB04
     NB --> WEIGHTS[local model checkpoints]
     WEIGHTS --> INF[app inference]
     CONFIG[app config] --> INF
@@ -31,6 +35,7 @@ flowchart TD
 | `.gitignore` | Excludes datasets, test samples, environment files, model/output files, and build artifacts. | Git. |
 | `README.md` | Project overview, quickstart, architecture, provenance caveats, deployment pointers. | Links backend, frontend, docs. |
 | `README_BACKEND.md` | Detailed preprocessing, training, inference, API, and notebook map. | `scripts/`, `notebooks/`, `app/`. |
+| `scripts/pipeline_summary.py` | Read-only CLI audit of source mappings, notebook settings, local dataset counts, and model metadata. | Run from repository root with `python scripts/pipeline_summary.py`. |
 | `app.py` | Gradio app, `/predict`, and local launch. | `app.main`, `app.config`. |
 | `check_gpu.py` | Local CUDA availability probe. | PyTorch. |
 | `requirements.txt` | Python dependency list for backend and notebooks. | Local environment / hosted backend. |
@@ -89,21 +94,21 @@ Training logic instead appears in the notebooks, and production inference is in 
 | `notebooks/01_dataset_visualization.ipynb` | Displays sample images by numeric class folder. |
 | `notebooks/02_dataloader_testing.ipynb` | Tests `ImageFolder`, data loaders, and 224 × 224 transforms on `train/val/test`. |
 | `notebooks/03_augmentation_testing.ipynb` | Visual augmentation experiment. |
-| `notebooks/04_image_quality_enhancement.ipynb` | CLAHE and conditional sharpening experiment; not called by live inference. |
-| `notebooks/05_efficientnet_training.ipynb` | EfficientNet-B2 training and TTA test evaluation using `enhanced_*`. |
+| `notebooks/04_image_quality_enhancement.ipynb` | Converts `train/val/test` into `enhanced_*` using CLAHE and conditional sharpening; not called by live inference. |
+| `notebooks/05_efficientnet_training.ipynb` | EfficientNet-B2 training and TTA test evaluation using notebook 04's `enhanced_*` outputs. |
 | `notebooks/06_gradcam_testing.ipynb` | Grad-CAM experiment; distinct from serving module `app/gradcam.py`. |
-| `notebooks/07_densenet121_training.ipynb` | Three-phase DenseNet training; test evaluation loads the phase-2 checkpoint from `enhanced_*`. |
+| `notebooks/07_densenet121_training.ipynb` | Three-phase DenseNet training; test evaluation loads the phase-2 checkpoint from notebook 04's `enhanced_*` outputs. |
 | `notebooks/08_model_comparison.ipynb` | Compares both checkpoint models on `enhanced_test`. |
 | `notebooks/09_ensemble_inference.ipynb` | Weighted soft-voting evaluation on `enhanced_test`. |
 | `notebooks/retinascan_experimentation.ipynb` | Zero-byte file; no notebook content. |
 
-The notebook `enhanced_*` data directory lineage is not established by the checked-in scripts.
+Notebook 04 establishes the source mapping from split outputs to `enhanced_*`, which notebooks 05 and 07 consume. Run `python scripts/pipeline_summary.py` at the repository root to inspect these source references and local data/model artifact availability without modifying them.
 
 ## Frontend files
 
 | File | Responsibility |
 |---|---|
-| `frontend/index.html` | Semantic page, upload/results layout, grading/disclaimer/methodology dialogs, raw report disclosure, explainability tabs. |
+| `frontend/index.html` | Semantic page, upload/results layout, grading/disclaimer dialogs, raw report disclosure, explainability tabs. |
 | `frontend/src/main.js` | Upload state, image metadata, `@gradio/client` connection, queue/cold-start status, report parsing, outputs and copy action. |
 | `frontend/src/style.css` | Clinical mint palette, responsive styling, scan/result/modal animations, reduced-motion handling. |
 | `frontend/package.json` | Vite scripts and `@gradio/client` runtime dependency. |
