@@ -1,354 +1,195 @@
-# 👁️ RetaniaScan-AI
+# RetinaScan AI
 
-## AI-Powered Diabetic Retinopathy Detection System
+RetinaScan AI is a research and triage-support demonstration for five-stage diabetic retinopathy (DR) screening from fundus photographs. A Vite frontend submits an image to a public Gradio Space; the backend returns a text report, a Grad-CAM overlay, and a downloadable PDF.
 
-RetaniaScan-AI is a full-stack AI healthcare platform for automated diabetic retinopathy detection using deep learning, explainable AI, and cloud deployment.
+> **Clinical limitation:** This project is not a medical device and does not diagnose, rule out, or treat disease. Outputs are for education and research triage support only and require review by a licensed ophthalmologist.
 
-The system combines:
+## Live services
 
-- 🧠 Ensemble retinal classification
-- 🔥 GradCAM explainability heatmaps
-- 📄 Automated PDF medical reports
-- ⚡ Gradio API hosted on Hugging Face Spaces
-- 🌐 Static frontend for Vercel and GitHub Pages
-- 🤗 HuggingFace AI hosting
+- **Hugging Face Space:** [01mayankk/RetinaScanAI](https://huggingface.co/spaces/01mayankk/RetinaScanAI)
+- **Vercel frontend:** deployment is configured in [`vercel.json`](./vercel.json), but a verified RetinaScan AI deployment URL is not recorded in this repository. The candidate `retinascan-ai.vercel.app` currently serves an unrelated Next.js starter, so it is intentionally not linked. Add the correct deployment URL here when available.
 
----
+The browser connects to the public Space through `@gradio/client` without a Hugging Face token. The frontend returns only the report, heatmap, and PDF provided by the API; the API does not expose a per-class probability vector.
 
-# 🚀 Features
-
-✅ Diabetic Retinopathy Severity Classification  
-✅ EfficientNetB2 + DenseNet121 Deep Learning Model  
-✅ Explainable AI using GradCAM  
-✅ Confidence Score Analysis  
-✅ Risk Level Prediction  
-✅ Automated Medical Recommendations  
-✅ PDF Medical Report Generation  
-✅ Gradio Client API
-✅ HuggingFace Spaces Deployment  
-✅ Vercel and GitHub Pages Frontend Support
-✅ Full AI Workflow Integration  
-
----
-
-# 🧠 AI Model Information
-
-| Component | Details |
-|---|---|
-| Model | EfficientNetB2  + DenseNet121|
-| Framework | PyTorch |
-| Classes | 5 |
-| Explainability | GradCAM |
-| Backend | Gradio |
-| Frontend | Vite + JavaScript |
-| Backend Hosting | HuggingFace Spaces |
-| Frontend Hosting | Vercel or GitHub Pages |
-
----
-
-# 🏗️ Complete System Architecture
+## System architecture
 
 ```mermaid
 flowchart TD
-
-    A[User Uploads Retinal Image]
-
-    A --> B[Frontend Application - Vite]
-
-    B --> C[Gradio Backend - HuggingFace Spaces]
-
-    C --> D[Image Preprocessing]
-
-    D --> E[EfficientNetB2 + DenseNet121 Model]
-
-    E --> F[DR Severity Prediction]
-
-    E --> G[Confidence Scoring]
-
-    E --> H[GradCAM Explainability]
-
-    H --> I[Heatmap Generation]
-
-    F --> J[Risk Assessment]
-
-    G --> J
-
-    J --> K[Medical Recommendation]
-
-    I --> L[PDF Report Generator]
-
+    A[Raw fundus images and train.csv] --> B[classify_images.py]
+    B --> C[classified_images by numeric diagnosis]
+    C --> D[balance_dataset.py]
+    D --> E[balanced_dataset]
+    E --> F[split_dataset.py]
+    F --> G[dataset train val test]
+    E -. "training dataset lineage not verified" .-> H[notebooks 05 and 07 use enhanced_train enhanced_val enhanced_test]
+    H --> I[EfficientNet-B2 and DenseNet121 training notebooks]
+    I --> J[EfficientNet-B2 checkpoint]
+    I --> K[DenseNet121 phase-2 checkpoint]
+    J --> L[app.inference weighted soft-voting ensemble]
     K --> L
-
-    L --> M[Report Text + Heatmap + PDF]
-
-    M --> N[Frontend Visualization]
-
-    N --> O[User Downloads Report]
+    L --> M[app.main analysis orchestration]
+    M --> N[Grad-CAM heatmap and PDF report]
+    O[User] --> P[Vercel static Vite frontend]
+    P --> Q["@gradio/client"]
+    Q --> R[Hugging Face Gradio Space]
+    R --> L
+    N --> R
+    R --> P
+    P --> S[Structured result, image attribution, PDF download]
 ```
 
----
+The dotted edge is intentional: the checked-in preprocessing script produces `dataset/train`, `dataset/val`, and `dataset/test`, while the training notebooks load `dataset/enhanced_train`, `dataset/enhanced_val`, and `dataset/enhanced_test`. The repository does not contain a verified step connecting those paths.
 
-# 🌐 Full Stack Deployment Architecture
+## Five DR grades
 
-```mermaid
-flowchart LR
+| Index | Class |
+|---:|---|
+| 0 | No DR |
+| 1 | Mild DR |
+| 2 | Moderate DR |
+| 3 | Severe DR |
+| 4 | Proliferative DR |
 
-    A[Static Vite Frontend]
-    B[Vercel or GitHub Pages]
+The live inference transform converts the image to RGB, resizes it to 300 × 300, and applies ImageNet normalization. It combines DenseNet121 probabilities (weight 0.6) with EfficientNet-B2 probabilities (weight 0.4). Grad-CAM is generated using the final DenseNet121 feature layer.
 
-    C[Gradio API]
-    D[HuggingFace Spaces]
-
-    E[EfficientNetB2 Model]
-    F[GradCAM Engine]
-    G[PDF Generator]
-
-    A --> B
-
-    B --> C
-
-    C --> D
-
-    D --> E
-
-    E --> F
-
-    F --> G
-```
-
----
-
-# 🔄 Complete Data Flow
-
-```mermaid
-sequenceDiagram
-
-    participant User
-    participant Frontend
-    participant Backend
-    participant AI_Model
-    participant GradCAM
-    participant PDF
-
-    User->>Frontend: Upload Retina Image
-
-    Frontend->>Backend: Gradio Client API /run_analysis
-
-    Backend->>AI_Model: Run Inference
-
-    AI_Model-->>Backend: Prediction + Confidence
-
-    Backend->>GradCAM: Generate Heatmap
-
-    GradCAM-->>Backend: Heatmap Image
-
-    Backend->>PDF: Generate Medical Report
-
-    PDF-->>Backend: PDF File
-
-    Backend-->>Frontend: Report + Heatmap + PDF
-
-    Frontend-->>User: Display Results
-```
-
----
-
-# 📁 Project Structure
+## Repository map
 
 ```text
-retaniascan-ai/
-│
+.
+├── .github/
+│   └── workflows/frontend-pages.yml      # Optional GitHub Pages build/deploy
+├── app.py                                # Gradio UI and /predict API
 ├── app/
-│   ├── config.py
-│   ├── gradcam.py
-│   ├── inference.py
-│   ├── main.py
-│   ├── report_generator.py
-│   └── utils.py
-│
-├── dataset/
-│
-├── models/
-│   ├── efficientnet/
-│   └── densenet121/
-│
-├── notebooks/
-│
-├── outputs/
-│
-├── scripts/
-│
+│   ├── __init__.py
+│   ├── config.py                         # Labels, model paths, ensemble settings
+│   ├── inference.py                      # Two-model inference and report fields
+│   ├── gradcam.py                        # DenseNet121 Grad-CAM overlay
+│   ├── main.py                           # Inference, heatmap, PDF orchestration
+│   ├── report_generator.py               # Timestamped PDF creation
+│   ├── app_utils.py                      # Empty placeholder
+│   └── utils.py                          # Empty placeholder
 ├── frontend/
-│
-├── app.py
-├── requirements.txt
-└── README.md
+│   ├── index.html                        # Screening interface and dialogs
+│   ├── src/main.js                       # Gradio client, upload, parsing, rendering
+│   ├── src/style.css                     # Clinical UI styles and interactions
+│   ├── package.json                      # Vite and @gradio/client scripts
+│   ├── package-lock.json
+│   ├── vite.config.js                    # Base-path configuration
+│   ├── .env.example                      # Public client configuration example
+│   └── README.md                         # Frontend/API/deployment guide
+├── notebooks/
+│   ├── 00_gpu_test.ipynb
+│   ├── 01_dataset_visualization.ipynb
+│   ├── 02_dataloader_testing.ipynb
+│   ├── 03_augmentation_testing.ipynb
+│   ├── 04_image_quality_enhancement.ipynb
+│   ├── 05_efficientnet_training.ipynb
+│   ├── 06_gradcam_testing.ipynb
+│   ├── 07_densenet121_training.ipynb
+│   ├── 08_model_comparison.ipynb
+│   ├── 09_ensemble_inference.ipynb
+│   └── retinascan_experimentation.ipynb  # Empty file
+├── scripts/
+│   ├── preprocessing/
+│   │   ├── classify_images.py
+│   │   ├── balance_dataset.py
+│   │   ├── split_dataset.py
+│   │   ├── count_images.py
+│   │   └── count_balanced_dataset.py
+│   ├── training/                         # Five empty Python placeholders
+│   │   ├── evaluate_model.py
+│   │   ├── inference.py
+│   │   ├── metrics.py
+│   │   ├── test_model.py
+│   │   └── train_model.py
+│   └── utils/                            # Three empty Python placeholders
+│       ├── config.py
+│       ├── dataset_utils.py
+│       └── image_utils.py
+├── models/                               # Local checkpoints (not tracked by Git)
+├── outputs/                              # Runtime heatmaps and generated reports
+├── README.md
+├── README_BACKEND.md                     # Backend and ML pipeline guide
+├── docs/
+│   ├── ARCHITECTURE.md
+│   ├── DATAFLOW.md
+│   ├── DECISIONS.md
+│   ├── PROJECT_STATUS.md
+│   ├── FILE_GUIDE.md
+│   └── ONBOARDING.md
+├── .gitignore
+├── check_gpu.py
+├── requirements.txt                      # Python runtime dependencies
+├── setup_project_structure.py
+└── vercel.json                           # Vercel frontend build configuration
 ```
 
----
+The source-controlled file-by-file reference is in [`docs/FILE_GUIDE.md`](./docs/FILE_GUIDE.md). Dataset files and model weights are local assets and are not committed.
 
-# 🔥 GradCAM Explainability
+## Quickstart
 
-RetaniaScan-AI uses GradCAM to visualize retinal regions that influenced the AI model's prediction.
+### Run the Gradio backend locally
 
-### Heatmap Interpretation
-
-| Color | Meaning |
-|---|---|
-| 🔴 Red | Highest influence |
-| 🟠 Orange | Strong influence |
-| 🟢 Green | Moderate influence |
-| 🔵 Blue | Low influence |
-
-This improves:
-- AI transparency
-- Clinical interpretability
-- Medical trustworthiness
-
----
-
-# 📄 PDF Medical Reports
-
-The system automatically generates downloadable PDF reports containing:
-
-- Uploaded retinal image
-- DR severity prediction
-- Confidence score
-- Risk level
-- GradCAM heatmap
-- AI recommendation
-- Timestamp
-- Disclaimer
-
----
-
-# ⚙️ Local Gradio Setup
-
-## 1. Create and activate a virtual environment (Windows)
+Use Python 3.10 or later. From the repository root in PowerShell:
 
 ```powershell
 py -3.10 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-```
-
-## 2. Install dependencies and model weights
-
-```bash
 pip install -r requirements.txt
-```
-
-The model files are not tracked in Git. From the repository root, download the
-same weights used by the Hugging Face Space:
-
-```powershell
 New-Item -ItemType Directory -Force models\efficientnet, models\densenet121 | Out-Null
 Invoke-WebRequest https://huggingface.co/spaces/01mayankk/RetinaScanAI/resolve/main/models/efficientnet/best_efficientnet_b2.pth -OutFile models\efficientnet\best_efficientnet_b2.pth
 Invoke-WebRequest https://huggingface.co/spaces/01mayankk/RetinaScanAI/resolve/main/models/densenet121/best_densenet121_phase2.pth -OutFile models\densenet121\best_densenet121_phase2.pth
-```
-
-Run the app from the repository root:
-
-```bash
 python app.py
 ```
 
-Open `http://127.0.0.1:7860`. The Gradio endpoint is `/predict`; API details are
-available at `http://127.0.0.1:7860/gradio_api/info`.
+The local Gradio server listens on `http://127.0.0.1:7860`; `app.py` registers the API as `/predict`. API details are available at `http://127.0.0.1:7860/gradio_api/info`.
 
-# 🌐 Frontend Setup and Deployment
-
-The frontend uses the official `@gradio/client` SDK and connects directly to the
-public `01mayankk/RetinaScanAI` Space at `/run_analysis`. No Hugging Face token
-or client-side secret is required. The `VITE_*` settings are public build-time
-configuration, not secret storage. To use the local app instead, set
-`VITE_GRADIO_SPACE=http://127.0.0.1:7860` and
-`VITE_GRADIO_API_NAME=/predict` in `frontend/.env.local`.
-
-Run locally:
+### Run and build the frontend
 
 ```powershell
 cd frontend
-npm install
+npm ci
 Copy-Item .env.example .env.local
 npm run dev
 ```
 
-Create a production build with `npm run build`; the output is `frontend/dist`.
-`VITE_BASE_PATH` configures the Vite base path and defaults to `./`, which works
-for Vercel and repository-path GitHub Pages deployments.
+The example frontend configuration targets the public Space and its `/run_analysis` endpoint. To use the local backend, set these values in `frontend/.env.local`:
 
-## Deploy to Vercel
-
-Import the repository into Vercel with the repository root as the project root.
-The root `vercel.json` installs the frontend dependencies, runs the Vite build,
-and publishes `frontend/dist`. Deploy from the repository root:
-
-```bash
-npx vercel --prod
+```dotenv
+VITE_GRADIO_SPACE=http://127.0.0.1:7860
+VITE_GRADIO_API_NAME=/predict
+VITE_BASE_PATH=./
 ```
 
-The Space and `/run_analysis` endpoint are defaults in the frontend. If you
-override them in Vercel, configure `VITE_GRADIO_SPACE` and
-`VITE_GRADIO_API_NAME` as public build variables. Do not add `HF_TOKEN` or
-other secrets to frontend environment variables or source files.
+Create and verify the production bundle with:
 
-For GitHub Pages, set the repository's Pages source to **GitHub Actions**. The
-included workflow builds and deploys `frontend/dist` on pushes to `main`:
-
-```bash
-git add frontend .github/workflows/frontend-pages.yml README.md .gitignore app.py requirements.txt
-git commit -m "Add RetinaScanAI frontend"
-git push origin main
+```powershell
+npm run build
 ```
 
-The frontend renders the Gradio outputs as returned: report text (including
-prediction, top-two confidence values, risk, confidence status, recommendation,
-and disclaimer), Grad-CAM image, and PDF file. The API does not return a
-per-class probability vector.
+No `HF_TOKEN` or other API key belongs in frontend source or public `VITE_*` settings. The Space is public and the frontend uses its unauthenticated client connection.
 
----
+## Deployment
 
-# 📊 Gradio API Contract
+Vercel uses the repository-root [`vercel.json`](./vercel.json): it installs frontend dependencies, runs the Vite build, and serves `frontend/dist`. Import this repository with its root as the Vercel project root. Add the verified deployment URL to the Live services section after deployment.
 
-`/run_analysis` on the currently deployed Space accepts one image input named
-`image` and returns three outputs in order: report text, a Grad-CAM image file,
-and a PDF report file. The local app exposes the same input/output contract at
-`/predict`.
+The optional GitHub Pages workflow is [`frontend-pages.yml`](./.github/workflows/frontend-pages.yml). The Vite `VITE_BASE_PATH` setting supports repository-path hosting.
 
----
+## Dataset and model provenance
 
-# 🔐 Security & Disclaimer
+- `scripts/preprocessing/classify_images.py` copies CSV-labeled PNG files into numeric class folders.
+- `balance_dataset.py` targets 300 files per class by random undersampling or image augmentation. `split_dataset.py` then performs per-class random 70/15/15 file splitting.
+- Augmentation happens before that split, without a source-image grouping step; related copies could cross split boundaries.
+- The notebooks use `enhanced_*` data directories, and this repository does not prove how those directories were derived from the scripted split. See the [Dataset & Training Methodology view](./frontend/index.html) in the frontend and [`README_BACKEND.md`](./README_BACKEND.md) for the full evidence and caveats.
+- Stored notebook output reports 68.89% EfficientNet-B2 accuracy with test-time augmentation, 68.00% DenseNet121 accuracy, and 70.22% ensemble accuracy. These are historical notebook outputs, not independently reproduced results or clinical performance guarantees.
 
-⚠️ This project is designed for:
+## Further reading
 
-- Educational purposes
-- AI research
-- Demonstration systems
-
-It is NOT intended to replace professional medical diagnosis.
-
-Always consult certified ophthalmologists for clinical decisions.
-
----
-
-# 🔮 Future Improvements
-
-- Multi-model AI ensemble
-- Retina image quality assessment
-- User authentication
-- Patient history dashboard
-- ONNX optimization
-- GPU acceleration
-- Cloud database integration
-- Multi-language support
-- Mobile application
-
----
-
-# 👨‍💻 Developer
-
-## Mayank Kumar
-
-RetaniaScan-AI — AI-Powered Retinal Screening System
-
----
+- [Backend and ML pipeline](./README_BACKEND.md)
+- [Frontend architecture and deployment](./frontend/README.md)
+- [Architecture](./docs/ARCHITECTURE.md)
+- [Dataflow](./docs/DATAFLOW.md)
+- [Architectural decisions](./docs/DECISIONS.md)
+- [Project status and limitations](./docs/PROJECT_STATUS.md)
+- [File guide](./docs/FILE_GUIDE.md)
+- [Developer onboarding](./docs/ONBOARDING.md)
