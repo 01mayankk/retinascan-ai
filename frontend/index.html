@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Diabetic retinopathy screening and explainability for research and triage support."
+    />
+    <meta name="theme-color" content="#f2f8f5" />
+    <title>RetinaScan AI | Clinical screening</title>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="RetinaScan AI home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M3 12s3.2-6 9-6 9 6 9 6-3.2 6-9 6-9-6-9-6Z" />
+              <circle cx="12" cy="12" r="2.8" />
+            </svg>
+          </span>
+          <span>RetinaScan <strong>AI</strong></span>
+        </a>
+        <span class="model-badge">ICDR 5-Stage DR Grading <span aria-hidden="true">·</span> Grad-CAM XAI</span>
+        <nav class="header-actions" aria-label="Clinical information">
+          <button class="text-button" type="button" data-dialog="grading-guide">Grading Scale Guide</button>
+          <button class="text-button" type="button" data-dialog="clinical-disclaimer">Clinical Disclaimer</button>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero" aria-labelledby="page-title">
+          <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span> RETINAL SCREENING WORKSPACE</p>
+          <h1 id="page-title">Automated Diabetic Retinopathy Screening &amp; Explainability</h1>
+          <p class="hero-copy">
+            Rapid fundus image triage powered by deep learning and Grad-CAM visual attribution—built to support early retinal risk assessment.
+          </p>
+        </section>
+
+        <section class="workspace" aria-label="Retinal image analysis">
+          <form id="analysis-form" class="upload-panel">
+            <div class="section-heading">
+              <span class="step-number">01</span>
+              <div>
+                <h2>Upload fundus image</h2>
+                <p>Choose a clear macula-centered retinal photograph.</p>
+              </div>
+            </div>
+
+            <label id="upload-box" class="upload-box" for="image-input">
+              <span id="upload-prompt" class="upload-prompt">
+                <span class="upload-icon" aria-hidden="true">+</span>
+                <strong>Choose a retinal image</strong>
+                <span>Drag and drop an image here, or click to browse</span>
+              </span>
+              <input id="image-input" type="file" accept="image/jpeg,image/png" required />
+            </label>
+
+            <div id="selected-image" class="selected-image" hidden>
+              <div id="fundus-frame" class="fundus-frame">
+                <img id="image-preview" class="image-preview" alt="Selected retinal fundus image preview" />
+                <button id="replace-image" class="replace-button" type="button">Replace image</button>
+                <div class="scan-line" aria-hidden="true"></div>
+                <div class="scan-status" role="status">
+                  <span class="scan-status-dot" aria-hidden="true"></span>
+                  Running EfficientNet-B2 + Grad-CAM...
+                </div>
+              </div>
+              <div class="file-meta">
+                <div class="file-details">
+                  <strong id="file-name"></strong>
+                  <span id="file-details"></span>
+                </div>
+                <span class="ready-badge">
+                  <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="m3.5 8.2 2.8 2.7 6.2-6" />
+                  </svg>
+                  Ready for screening
+                </span>
+              </div>
+            </div>
+
+            <button id="analyze-button" class="primary-button" type="submit" disabled>
+              <span class="button-spinner" aria-hidden="true"></span>
+              <span class="button-copy">Run Retinal Analysis</span>
+              <svg class="button-arrow" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M4 10h12m-5-5 5 5-5 5" />
+              </svg>
+            </button>
+            <p class="image-guidelines">Centered macula / optic disc · RGB fundus photography · JPG or PNG</p>
+            <p id="request-status" class="request-status" role="status" aria-live="polite">
+              Select an image to begin.
+            </p>
+          </form>
+
+          <section id="results" class="results-panel" aria-labelledby="results-title">
+            <div class="section-heading">
+              <span class="step-number">02</span>
+              <div>
+                <h2 id="results-title">Screening results</h2>
+                <p id="results-subtitle">A structured summary will appear after analysis.</p>
+              </div>
+            </div>
+
+            <div id="results-empty" class="results-empty">
+              <span class="empty-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M3 12s3.2-6 9-6 9 6 9 6-3.2 6-9 6-9-6-9-6Z" />
+                  <circle cx="12" cy="12" r="2.8" />
+                </svg>
+              </span>
+              <strong>Ready for image analysis</strong>
+              <span>Upload a fundus image to view the screening summary and explainability.</span>
+            </div>
+
+            <div id="result-content" hidden>
+              <article class="result-card report-card" aria-label="Clinical screening summary">
+                <div class="diagnosis-banner">
+                  <div>
+                    <p class="card-label">PRIMARY SCREENING RESULT</p>
+                    <h3 id="diagnosis-output"></h3>
+                  </div>
+                  <span id="risk-badge" class="risk-badge"></span>
+                </div>
+                <div class="confidence-status">
+                  <span class="confidence-status-dot" aria-hidden="true"></span>
+                  <span id="confidence-status-output"></span>
+                </div>
+
+                <div class="confidence-block">
+                  <div class="confidence-heading">
+                    <span>Prediction confidence</span>
+                    <strong id="confidence-output" class="metric"></strong>
+                  </div>
+                  <div class="progress-track" role="progressbar" aria-label="Prediction confidence" aria-valuemin="0" aria-valuemax="100">
+                    <span id="confidence-bar" class="progress-fill"></span>
+                  </div>
+                  <div class="runner-up-row">
+                    <span>Second likely class</span>
+                    <strong id="runner-up-output"></strong>
+                  </div>
+                </div>
+
+                <div class="recommendation-callout">
+                  <span class="recommendation-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M7 3v5a5 5 0 0 0 10 0V3M5 3h4m6 0h4M12 13v2a4 4 0 0 0 8 0v-1" />
+                      <circle cx="20" cy="12" r="1" />
+                    </svg>
+                  </span>
+                  <div>
+                    <strong>Clinical recommendation</strong>
+                    <p id="recommendation-output"></p>
+                  </div>
+                </div>
+
+                <details class="raw-report">
+                  <summary>View raw technical output</summary>
+                  <pre id="report-output"></pre>
+                </details>
+              </article>
+
+              <article class="result-card explainability-card">
+                <div class="card-topline">
+                  <div>
+                    <p class="card-label">EXPLAINABILITY</p>
+                    <h3>Image attribution</h3>
+                  </div>
+                  <span class="xai-label">Grad-CAM</span>
+                </div>
+                <div class="view-tabs" role="tablist" aria-label="Explainability image view">
+                  <button id="original-tab" class="view-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="original-panel">Original</button>
+                  <button id="heatmap-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="heatmap-panel">Grad-CAM Heatmap</button>
+                </div>
+                <div id="original-panel" class="image-view-panel is-active" role="tabpanel" aria-labelledby="original-tab">
+                  <div class="comparison-heading"><strong>Original fundus image</strong><span>Input</span></div>
+                  <img id="original-output" class="comparison-image" alt="Original uploaded fundus image" />
+                </div>
+                <div id="heatmap-panel" class="image-view-panel" role="tabpanel" aria-labelledby="heatmap-tab" hidden>
+                  <div class="comparison-heading"><strong>Grad-CAM attention heatmap</strong><span>Model focus</span></div>
+                  <img id="heatmap-output" class="comparison-image" alt="Grad-CAM attention heatmap" hidden />
+                  <p id="heatmap-unavailable" class="unavailable-output" hidden>
+                    No heatmap file was returned by the analysis service.
+                  </p>
+                </div>
+                <p class="explainability-note">
+                  Highlighted regions indicate image areas contributing to the model output. These may overlap retinal features such as microaneurysms, hemorrhages, exudates, or optic disc structures; they are not confirmed lesions.
+                </p>
+              </article>
+
+              <article class="result-card report-actions">
+                <div>
+                  <p class="card-label">CLINICAL REPORT</p>
+                  <h3>Save or share this screening summary</h3>
+                </div>
+                <p id="pdf-unavailable" class="unavailable-output" hidden>
+                  No PDF file was returned by the analysis service.
+                </p>
+                <div class="report-buttons">
+                  <a id="pdf-download" class="download-link" href="#" download hidden>
+                    Download Clinical PDF Report <span aria-hidden="true">↓</span>
+                  </a>
+                  <button id="copy-summary" class="secondary-button" type="button">Copy Summary</button>
+                </div>
+                <p class="report-disclaimer">For research and triage support only. Findings require confirmation by a licensed ophthalmologist.</p>
+              </article>
+            </div>
+          </section>
+        </section>
+      </main>
+
+      <footer class="page-footer">
+        RetinaScan AI <span aria-hidden="true">·</span> Educational screening support, not a medical diagnosis.
+      </footer>
+    </div>
+
+    <dialog id="grading-guide" class="info-dialog">
+      <div class="dialog-heading">
+        <div><p class="card-label">REFERENCE</p><h2>ICDR 5-stage grading scale</h2></div>
+        <button class="dialog-close" type="button" aria-label="Close dialog">×</button>
+      </div>
+      <p class="dialog-intro">The International Clinical Diabetic Retinopathy (ICDR) scale describes increasing levels of diabetic retinopathy severity.</p>
+      <ol class="grading-list">
+        <li><span class="grade-number">0</span><div><strong>No DR</strong><span>No visible diabetic retinopathy.</span></div></li>
+        <li><span class="grade-number">1</span><div><strong>Mild DR</strong><span>Microaneurysms only.</span></div></li>
+        <li><span class="grade-number">2</span><div><strong>Moderate DR</strong><span>More than microaneurysms, but less than severe NPDR.</span></div></li>
+        <li><span class="grade-number">3</span><div><strong>Severe DR</strong><span>Severe non-proliferative diabetic retinopathy.</span></div></li>
+        <li><span class="grade-number">4</span><div><strong>Proliferative DR</strong><span>Proliferative diabetic retinopathy.</span></div></li>
+      </ol>
+      <p class="dialog-footnote">This reference is educational and does not replace clinical grading by an eye-care professional.</p>
+    </dialog>
+
+    <dialog id="clinical-disclaimer" class="info-dialog">
+      <div class="dialog-heading">
+        <div><p class="card-label">IMPORTANT INFORMATION</p><h2>Clinical disclaimer</h2></div>
+        <button class="dialog-close" type="button" aria-label="Close dialog">×</button>
+      </div>
+      <p class="dialog-intro">RetinaScan AI provides automated analysis for research and triage support only. It is not intended to diagnose, treat, or rule out diabetic retinopathy.</p>
+      <p class="dialog-intro">Image quality, model limitations, and other clinical factors can affect the output. A licensed ophthalmologist must review and confirm any screening result. Do not use this tool as a substitute for professional medical advice or an eye examination.</p>
+    </dialog>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
