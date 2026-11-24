@@ -1046,11 +1046,6 @@ h1 {
     display 200ms allow-discrete;
 }
 
-.methodology-dialog {
-  width: min(820px, calc(100% - 32px));
-  max-height: min(88vh, 800px);
-}
-
 .info-dialog[open] {
   opacity: 1;
   transform: translateY(0) scale(1);
@@ -1160,66 +1155,6 @@ h1 {
   font-size: 10px;
 }
 
-.methodology-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin: 16px 0;
-}
-
-.methodology-section {
-  padding: 13px;
-  border: 1px solid var(--clinical-border);
-  border-radius: 9px;
-  background: #fbfdfb;
-}
-
-.methodology-section h3 {
-  margin: 0 0 9px;
-  color: #294d41;
-  font-size: 12px;
-  font-weight: 650;
-}
-
-.methodology-section ul {
-  display: grid;
-  gap: 7px;
-  margin: 0;
-  padding-left: 16px;
-  color: #61747c;
-  font-size: 10px;
-  line-height: 1.6;
-}
-
-.methodology-section strong,
-.methodology-caveat strong {
-  color: #405d52;
-  font-weight: 650;
-}
-
-.methodology-section code,
-.methodology-caveat code {
-  color: #225d48;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.94em;
-  overflow-wrap: anywhere;
-}
-
-.methodology-caveat {
-  margin: 0 0 13px;
-  padding: 12px 13px;
-  border-left: 3px solid #c18b26;
-  border-radius: 0 8px 8px 0;
-  background: #fffaf0;
-  color: #6f634d;
-  font-size: 10px;
-  line-height: 1.65;
-}
-
-.methodology-caveat p {
-  margin: 4px 0 0;
-}
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -1326,10 +1261,6 @@ h1 {
   }
 
   .workspace {
-    grid-template-columns: 1fr;
-  }
-
-  .methodology-grid {
     grid-template-columns: 1fr;
   }
 
