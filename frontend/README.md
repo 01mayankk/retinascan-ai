@@ -79,7 +79,7 @@ The client expects three outputs in order: report text, heatmap file, and PDF fi
 | `package-lock.json` | Locked frontend dependency graph used by `npm ci`. |
 | `vite.config.js` | Applies `VITE_BASE_PATH` or defaults to `./`. |
 | `.env.example` | Public build configuration examples only; contains no secret. |
-| `../vercel.json` | Repository-root install/build/output configuration for Vercel. |
+| `../vercel.json` | Vercel install/build/output configuration when `frontend/` is the project Root Directory. |
 | `../.github/workflows/frontend-pages.yml` | Optional GitHub Pages build and deployment workflow. |
 
 ## Local development and production build
@@ -93,7 +93,7 @@ npm run dev
 npm run build
 ```
 
-The production bundle is written to `frontend/dist`. At the repository root, `vercel.json` runs `npm ci --prefix frontend`, `npm run build --prefix frontend`, and publishes `frontend/dist`.
+The production bundle is written to `frontend/dist`. In Vercel, set the project Root Directory to `frontend`; `vercel.json` runs `npm ci`, `npm run build`, and publishes `dist` relative to that directory.
 
 Never put `HF_TOKEN`, private keys, or other secrets in frontend source or public build variables. The Space ID, endpoint name, and base path are public configuration, not credentials.
 

@@ -173,7 +173,7 @@ No `HF_TOKEN` or other API key belongs in frontend source or public `VITE_*` set
 
 ## Deployment
 
-Vercel uses the repository-root [`vercel.json`](./vercel.json): it installs frontend dependencies, runs the Vite build, and serves `frontend/dist`. Import this repository with its root as the Vercel project root. Add the verified deployment URL to the Live services section after deployment.
+For Vercel, set the project Root Directory to `frontend`. The repository [`vercel.json`](./vercel.json) then runs `npm ci`, builds with `npm run build`, and serves `dist` from that directory. Add the verified deployment URL to the Live services section after deployment.
 
 The optional GitHub Pages workflow is [`frontend-pages.yml`](./.github/workflows/frontend-pages.yml). The Vite `VITE_BASE_PATH` setting supports repository-path hosting.
 
